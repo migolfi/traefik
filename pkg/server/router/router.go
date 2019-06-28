@@ -124,7 +124,6 @@ func (m *Manager) buildEntryPointHandler(ctx context.Context, configs map[string
 		modifiers = append(modifiers, modifier)
 	}
 
-	// TODO - Added Middleware for Entrypoints
 	reqModifier := m.requestModifierBuilder.BuildChain(ctx, modifiers)
 	return chain.Extend(*reqModifier).Then(router)
 }
