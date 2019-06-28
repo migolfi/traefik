@@ -11,6 +11,7 @@ func mergeConfiguration(configurations config.Configurations) config.Configurati
 	conf := config.Configuration{
 		HTTP: &config.HTTPConfiguration{
 			Routers:     make(map[string]*config.Router),
+			Modifiers:   make(map[string]*config.Middleware),
 			Middlewares: make(map[string]*config.Middleware),
 			Services:    make(map[string]*config.Service),
 		},
@@ -27,6 +28,9 @@ func mergeConfiguration(configurations config.Configurations) config.Configurati
 		if configuration.HTTP != nil {
 			for routerName, router := range configuration.HTTP.Routers {
 				conf.HTTP.Routers[internal.MakeQualifiedName(provider, routerName)] = router
+			}
+			for modifierName, modifier := range configuration.HTTP.Modifiers {
+				conf.HTTP.Modifiers[internal.MakeQualifiedName(provider, modifierName)] = modifier
 			}
 			for middlewareName, middleware := range configuration.HTTP.Middlewares {
 				conf.HTTP.Middlewares[internal.MakeQualifiedName(provider, middlewareName)] = middleware

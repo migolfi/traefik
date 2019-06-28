@@ -42,6 +42,7 @@ func (p *Provider) buildConfiguration(ctx context.Context, containersInspected [
 			}
 			provider.BuildTCPRouterConfiguration(ctxContainer, confFromLabel.TCP)
 			if len(confFromLabel.HTTP.Routers) == 0 &&
+				len(confFromLabel.HTTP.Modifiers) == 0 &&
 				len(confFromLabel.HTTP.Middlewares) == 0 &&
 				len(confFromLabel.HTTP.Services) == 0 {
 				configurations[containerName] = confFromLabel

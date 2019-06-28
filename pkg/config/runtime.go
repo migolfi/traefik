@@ -12,6 +12,7 @@ import (
 // RuntimeConfiguration holds the information about the currently running traefik instance.
 type RuntimeConfiguration struct {
 	Routers     map[string]*RouterInfo     `json:"routers,omitempty"`
+	Modifiers   map[string]*MiddlewareInfo `json:"modifiers,omitempty"`
 	Middlewares map[string]*MiddlewareInfo `json:"middlewares,omitempty"`
 	Services    map[string]*ServiceInfo    `json:"services,omitempty"`
 	TCPRouters  map[string]*TCPRouterInfo  `json:"tcpRouters,omitempty"`
@@ -40,6 +41,14 @@ func NewRuntimeConfig(conf Configuration) *RuntimeConfiguration {
 			runtimeConfig.Services = make(map[string]*ServiceInfo, len(services))
 			for k, v := range services {
 				runtimeConfig.Services[k] = &ServiceInfo{Service: v}
+			}
+		}
+
+		modifiers := conf.HTTP.Modifiers
+		if len(modifiers) > 0 {
+			runtimeConfig.Modifiers = make(map[string]*MiddlewareInfo, len(modifiers))
+			for k, v := range modifiers {
+				runtimeConfig.Modifiers[k] = &MiddlewareInfo{Middleware: v}
 			}
 		}
 

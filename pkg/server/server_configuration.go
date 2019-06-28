@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"github.com/containous/traefik/pkg/server/requestmodifiers"
 	"net/http"
 	"reflect"
 	"time"
@@ -92,9 +93,18 @@ func (s *Server) createTCPRouters(ctx context.Context, configuration *config.Run
 // createHTTPHandlers returns, for the given configuration and entryPoints, the HTTP handlers for non-TLS connections, and for the TLS ones. the given configuration must not be nil. its fields will get mutated.
 func (s *Server) createHTTPHandlers(ctx context.Context, configuration *config.RuntimeConfiguration, entryPoints []string) (map[string]http.Handler, map[string]http.Handler) {
 	serviceManager := service.NewManager(configuration.Services, s.defaultRoundTripper)
+
 	middlewaresBuilder := middleware.NewBuilder(configuration.Middlewares, serviceManager)
+	requestModifierFactory := requestmodifiers.NewBuilder(configuration.Modifiers)
 	responseModifierFactory := responsemodifiers.NewBuilder(configuration.Middlewares)
-	routerManager := router.NewManager(configuration, serviceManager, middlewaresBuilder, responseModifierFactory)
+
+	routerManager := router.NewManager(
+		configuration,
+		serviceManager,
+		middlewaresBuilder,
+		requestModifierFactory,
+		responseModifierFactory,
+	)
 
 	handlersNonTLS := routerManager.BuildHandlers(ctx, entryPoints, false)
 	handlersTLS := routerManager.BuildHandlers(ctx, entryPoints, true)

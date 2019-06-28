@@ -226,6 +226,7 @@ type Configurations map[string]*Configuration
 // HTTPConfiguration FIXME better name?
 type HTTPConfiguration struct {
 	Routers     map[string]*Router     `json:"routers,omitempty" toml:",omitempty"`
+	Modifiers map[string]*Middleware `json:"modifiers,omitempty" toml:",omitempty"`
 	Middlewares map[string]*Middleware `json:"middlewares,omitempty" toml:",omitempty"`
 	Services    map[string]*Service    `json:"services,omitempty" toml:",omitempty"`
 }

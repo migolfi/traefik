@@ -2,6 +2,7 @@ package router
 
 import (
 	"context"
+	"github.com/containous/traefik/pkg/server/requestmodifiers"
 	"net/http"
 
 	"github.com/containous/alice"
@@ -25,24 +26,27 @@ const (
 func NewManager(conf *config.RuntimeConfiguration,
 	serviceManager *service.Manager,
 	middlewaresBuilder *middleware.Builder,
-	modifierBuilder *responsemodifiers.Builder,
+	requestModifierBuilder *requestmodifiers.Builder,
+	responseModifierBuilder *responsemodifiers.Builder,
 ) *Manager {
 	return &Manager{
-		routerHandlers:     make(map[string]http.Handler),
-		serviceManager:     serviceManager,
-		middlewaresBuilder: middlewaresBuilder,
-		modifierBuilder:    modifierBuilder,
-		conf:               conf,
+		routerHandlers:          make(map[string]http.Handler),
+		serviceManager:          serviceManager,
+		middlewaresBuilder:      middlewaresBuilder,
+		requestModifierBuilder:  requestModifierBuilder,
+		responseModifierBuilder: responseModifierBuilder,
+		conf:                    conf,
 	}
 }
 
 // Manager A route/router manager
 type Manager struct {
-	routerHandlers     map[string]http.Handler
-	serviceManager     *service.Manager
-	middlewaresBuilder *middleware.Builder
-	modifierBuilder    *responsemodifiers.Builder
-	conf               *config.RuntimeConfiguration
+	routerHandlers          map[string]http.Handler
+	serviceManager          *service.Manager
+	middlewaresBuilder      *middleware.Builder
+	requestModifierBuilder  *requestmodifiers.Builder
+	responseModifierBuilder *responsemodifiers.Builder
+	conf                    *config.RuntimeConfiguration
 }
 
 func (m *Manager) getHTTPRouters(ctx context.Context, entryPoints []string, tls bool) map[string]map[string]*config.RouterInfo {
@@ -115,7 +119,14 @@ func (m *Manager) buildEntryPointHandler(ctx context.Context, configs map[string
 		return recovery.New(ctx, next, recoveryMiddlewareName)
 	})
 
-	return chain.Then(router)
+	modifiers := make([]string, 0, len(m.conf.Modifiers))
+	for modifier := range m.conf.Modifiers {
+		modifiers = append(modifiers, modifier)
+	}
+
+	// TODO - Added Middleware for Entrypoints
+	reqModifier := m.requestModifierBuilder.BuildChain(ctx, modifiers)
+	return chain.Extend(*reqModifier).Then(router)
 }
 
 func (m *Manager) buildRouterHandler(ctx context.Context, routerName string, routerConfig *config.RouterInfo) (http.Handler, error) {
@@ -146,7 +157,7 @@ func (m *Manager) buildHTTPHandler(ctx context.Context, router *config.RouterInf
 	for i, name := range router.Middlewares {
 		qualifiedNames[i] = internal.GetQualifiedName(ctx, name)
 	}
-	rm := m.modifierBuilder.Build(ctx, qualifiedNames)
+	rm := m.responseModifierBuilder.Build(ctx, qualifiedNames)
 
 	sHandler, err := m.serviceManager.BuildHTTP(ctx, router.Service, rm)
 	if err != nil {
